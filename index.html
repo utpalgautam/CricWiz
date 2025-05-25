@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Cricket Chatbot</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+        .chat-container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 24px; }
+        .chat-log { height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; padding: 16px; background: #fafbfc; margin-bottom: 16px; }
+        .msg { margin-bottom: 12px; }
+        .msg.user { text-align: right; }
+        .msg .bubble { display: inline-block; padding: 10px 16px; border-radius: 18px; max-width: 80%; }
+        .msg.user .bubble { background: #007bff; color: #fff; }
+        .msg.bot .bubble { background: #e9ecef; color: #222; }
+        .chat-input { display: flex; }
+        .chat-input input { flex: 1; padding: 10px; border-radius: 18px; border: 1px solid #ccc; font-size: 16px; }
+        .chat-input button { margin-left: 8px; padding: 10px 20px; border-radius: 18px; border: none; background: #007bff; color: #fff; font-size: 16px; cursor: pointer; }
+        .chat-input button:disabled { background: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Fantasy Cricket Chatbot</h2>
+        <div class="chat-log" id="chat-log"></div>
+        <form class="chat-input" id="chat-form">
+            <input type="text" id="user-input" placeholder="Ask your cricket question..." autocomplete="off" required />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <script>
+        const chatLog = document.getElementById('chat-log');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+
+        function appendMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg ' + sender;
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            // Render HTML for line breaks and basic formatting
+            bubble.innerHTML = text;
+            msgDiv.appendChild(bubble);
+            chatLog.appendChild(msgDiv);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = userInput.value.trim();
+            if (!message) return;
+            appendMessage('user', message);
+            userInput.value = '';
+            appendMessage('bot', 'Thinking...');
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+                chatLog.removeChild(chatLog.lastChild); // Remove 'Thinking...'
+                appendMessage('bot', typeof data.reply === 'string' ? data.reply : JSON.stringify(data.reply, null, 2));
+            } catch (err) {
+                chatLog.removeChild(chatLog.lastChild);
+                appendMessage('bot', 'Sorry, there was an error.');
+            }
+        });
+    </script>
+</body>
+</html>
